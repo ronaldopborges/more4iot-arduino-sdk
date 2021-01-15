@@ -1,0 +1,12 @@
+{
+    "name": "Middleware",
+    "keywords": "mqtt, iot, middleware",
+    "description": "A library for connecting to the IoT platform",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/iotufersa/middleware-arduino-sdk"
+    },
+    "version": "0.1",
+    "examples": "examples/*/*.ino",
+    "frameworks": "arduino"
+}

@@ -6,6 +6,9 @@
 #include <ArduinoJson.h>
 #include "ArduinoJson/Polyfills/type_traits.hpp"
 
+class MiddlewareDefaultLogger;
+
+template<typename Logger = MiddlewareDefaultLogger>
 class Middleware
 {
 public:
@@ -76,6 +79,12 @@ private:
   JsonObject jsonData;
   int fieldsAmount;
   size_t memoryAllocated;
+};
+
+class MiddlewareDefaultLogger
+{
+public:
+  static void log(const char *msg);
 };
 
 #endif
