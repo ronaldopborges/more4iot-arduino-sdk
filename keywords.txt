@@ -1,0 +1,25 @@
+#######################################
+# Syntax Coloring Map For Middleware
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Middleware	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+mqttConnect 	  KEYWORD2
+mqttConnected 	KEYWORD2
+mqttDisconnect  KEYWORD2
+mqttPublish     KEYWORD2
+mqttLoop	      KEYWORD2
+newDataObject   KEYWORD2
+addField        KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
