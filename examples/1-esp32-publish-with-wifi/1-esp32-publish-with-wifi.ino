@@ -1,55 +1,66 @@
 
-#include "MiddlewareArduinoSdk.h"
+#include "Middleware.h"
 #include "secrets.h"
 
-#include "Wifi.h"
+#include "WiFi.h"
+
+#define TIME_TO_SEND 10000
+
+char ssid[] = WIFI_SSID;
+char password[] = WIFI_PASSWORD;
+char token[] = TOKEN;
+char mqtt_server[] = MQTT_SERVER;
 
 WiFiClient espClient;
-Middleware md(espClient);                    
+Middleware md(espClient);
 
 void setup()
 {
-    Serial.begin(115200);
-    delay(10);
+  Serial.begin(115200);
+  delay(10);
 
-    // We start by connecting to a WiFi network
+  // We start by connecting to a WiFi network
 
-    Serial.println();
-    Serial.println();
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
+  Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
 
-    WiFi.begin(WIFI_AP, WIFI_PASSWORD);
+  WiFi.begin(ssid, password);
 
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
 
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
-void loop() {
-  delay(1000);
+void loop()
+{
+  delay(TIME_TO_SEND);
 
-  if (status != WL_CONNECTED) {
+  if (WiFi.status() != WL_CONNECTED)
+  {
     Serial.println("Connecting to AP ...");
     Serial.print("Attempting to connect to WPA SSID: ");
-    Serial.println(WIFI_AP);
-    status = WiFi.begin(WIFI_AP, WIFI_PASSWORD);
+    Serial.println(ssid);
+    WiFi.begin(ssid, password);
     return;
   }
 
-  if (!md.mqttConnected()) {
-    // Connect to the ThingsBoard
+  if (!md.mqttConnected())
+  {
     Serial.print("Connecting to: ");
-    Serial.print(MQTT_SERVER);
+    Serial.print(mqtt_server);
     Serial.print(" with token ");
-    Serial.println(TOKEN);
-    if (!md.mqttConnect(MQTT_SERVER)) {
+    Serial.println(token);
+    if (!md.mqttConnect(mqtt_server))
+    {
       Serial.println("Failed to connect");
       return;
     }
@@ -60,5 +71,4 @@ void loop() {
   md.mqttPublish();
 
   Serial.println("Sending data...");
-
 }
