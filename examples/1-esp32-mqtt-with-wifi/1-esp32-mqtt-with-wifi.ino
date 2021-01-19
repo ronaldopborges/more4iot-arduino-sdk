@@ -9,7 +9,7 @@
 char ssid[] = WIFI_SSID;
 char password[] = WIFI_PASSWORD;
 char token[] = TOKEN;
-char mqtt_server[] = MQTT_SERVER;
+char server[] = SERVER;
 
 WiFiClient espClient;
 MiddlewareMqtt md(espClient);
@@ -56,10 +56,10 @@ void loop()
   if (!md.connected())
   {
     Serial.print("Connecting to: ");
-    Serial.print(mqtt_server);
+    Serial.print(server);
     Serial.print(" with token ");
     Serial.println(token);
-    if (!md.connect(mqtt_server))
+    if (!md.connect(server))
     {
       Serial.println("Failed to connect");
       return;

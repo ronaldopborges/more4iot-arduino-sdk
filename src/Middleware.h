@@ -11,7 +11,11 @@
 #include <ArduinoHttpClient.h>
 #include <PubSubClient.h>
 
-class MiddlewareDefaultLogger;
+class MiddlewareDefaultLogger
+{
+public:
+  static void log(const char *msg);
+};
 using Logger = MiddlewareDefaultLogger;
 
 class DataAttribute
@@ -94,6 +98,44 @@ public:
   }
 
 protected:
+  String getDataObjectJson()
+  {
+    if (fieldsAmount < (dataFields.size() + DATA_HEADER_FIELDS_AMT))
+    {
+      Serial.println("too much JSON fields passed");
+      return "";
+    }
+    String payload;
+    DynamicJsonDocument jsonBuffer(memoryAllocated);
+    JsonObject jsonRoot = jsonBuffer.to<JsonObject>();
+
+    for (DataAttribute d : dataHeader)
+    {
+      if (d.serializeDataAt(jsonRoot) == false)
+      {
+        Serial.println("unable to serialize data");
+        return "";
+      }
+    }
+    JsonObject jsonData = jsonRoot.createNestedObject("data");
+    for (DataAttribute d : dataFields)
+    {
+      if (d.serializeDataAt(jsonData) == false)
+      {
+        Serial.println("unable to serialize data");
+        return "";
+      }
+    }
+    if (measureJson(jsonBuffer) > memoryAllocated - 1)
+    {
+      Serial.println("too small buffer for JSON data");
+      return "";
+    }
+    serializeJson(jsonRoot, payload);
+
+    return payload;
+  }
+
   std::vector<DataAttribute> dataHeader;
   std::vector<DataAttribute> dataFields;
   int fieldsAmount;
@@ -141,51 +183,46 @@ public:
 private:
   inline size_t jsonObjectSize(size_t tam) { return tam * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
 
-  String getDataObjectJson()
-  {
-    if (fieldsAmount < (dataFields.size() + DATA_HEADER_FIELDS_AMT))
-    {
-      Serial.println("too much JSON fields passed");
-      return "";
-    }
-    String payload;
-    DynamicJsonDocument jsonBuffer(memoryAllocated);
-    JsonObject jsonRoot = jsonBuffer.to<JsonObject>();
-
-    for (DataAttribute d : dataHeader)
-    {
-      if (d.serializeDataAt(jsonRoot) == false)
-      {
-        Serial.println("unable to serialize data");
-        return "";
-      }
-    }
-    JsonObject jsonData = jsonRoot.createNestedObject("data");
-    for (DataAttribute d : dataFields)
-    {
-      if (d.serializeDataAt(jsonData) == false)
-      {
-        Serial.println("unable to serialize data");
-        return "";
-      }
-    }
-    if (measureJson(jsonBuffer) > memoryAllocated - 1)
-    {
-      Serial.println("too small buffer for JSON data");
-      return "";
-    }
-    serializeJson(jsonRoot, payload);
-
-    return payload;
-  }
-
   PubSubClient mqtt_client;
 };
 
-class MiddlewareDefaultLogger
+class MiddlewareHttp : public DataObjectImpl
 {
 public:
-  static void log(const char *msg);
+  inline MiddlewareHttp(Client &client, const char *access_token,
+                        const char *host, int port = 80)
+      : httpClient(client, host, port), httpHost(host), httpToken(access_token), httpPort(port)
+  {
+  }
+  inline ~MiddlewareHttp() {}
+
+  bool sendJson()
+  {
+    if (!httpClient.connected())
+    {
+      if (!httpClient.connect(httpHost, httpPort))
+      {
+        Serial.println("connect to server failed");
+        return false;
+      }
+    }
+
+    bool rc = true;
+    String path = String("/inputCommunicator");
+    if (!httpClient.post(path, "application/json", getDataObjectJson()) || (httpClient.responseStatusCode() != HTTP_SUCCESS))
+    {
+      rc = false;
+    }
+
+    httpClient.stop();
+    return rc;
+  }
+
+private:
+  HttpClient httpClient;
+  const char *httpHost;
+  int httpPort;
+  const char *httpToken;
 };
 
 #endif
