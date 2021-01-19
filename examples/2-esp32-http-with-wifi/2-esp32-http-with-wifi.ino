@@ -10,9 +10,10 @@ char ssid[] = WIFI_SSID;
 char password[] = WIFI_PASSWORD;
 char token[] = TOKEN;
 char server[] = SERVER;
+int port = PORT;
 
 WiFiClient espClient;
-MiddlewareHttp md(espClient, server, token);
+MiddlewareHttp md(espClient, server, port);
 
 void setup()
 {

@@ -133,6 +133,7 @@ protected:
     }
     serializeJson(jsonRoot, payload);
 
+    Serial.println(payload.c_str());
     return payload;
   }
 
@@ -189,9 +190,9 @@ private:
 class MiddlewareHttp : public DataObjectImpl
 {
 public:
-  inline MiddlewareHttp(Client &client, const char *access_token,
+  inline MiddlewareHttp(Client &client,
                         const char *host, int port = 80)
-      : httpClient(client, host, port), httpHost(host), httpToken(access_token), httpPort(port)
+      : httpClient(client, host, port), httpHost(host), httpPort(port)
   {
   }
   inline ~MiddlewareHttp() {}
@@ -222,7 +223,6 @@ private:
   HttpClient httpClient;
   const char *httpHost;
   int httpPort;
-  const char *httpToken;
 };
 
 #endif
