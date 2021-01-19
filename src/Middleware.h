@@ -5,16 +5,18 @@
 #define DATA_HEADER_FIELDS_AMT 3
 
 #include <vector>
-#include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "ArduinoJson/Polyfills/type_traits.hpp"
+
+#include <ArduinoHttpClient.h>
+#include <PubSubClient.h>
 
 class MiddlewareDefaultLogger;
 using Logger = MiddlewareDefaultLogger;
 
 class DataAttribute
 {
-  friend class Middleware;
+  friend class DataObjectImpl;
 
 public:
   inline DataAttribute()
@@ -41,6 +43,8 @@ public:
     return NULL;
   }
 
+  bool serializeDataAt(JsonObject &jsonObj) const;
+
 private:
   union DataAttributeValueUnion
   {
@@ -62,47 +66,12 @@ private:
   DataAttributeTypeEnum dataAtTypeEnum;
   const char *dataAtName;
   DataAttributeValueUnion dataAtValue;
-
-  bool serializeDataAt(JsonObject &jsonObj) const;
 };
 
-class Middleware
+class DataObjectImpl
 {
 public:
-  inline Middleware(Client &client) : mqtt_client(client) {}
-  inline ~Middleware() {}
-
-  bool mqttConnect(const char *host, int port = 1883)
-  {
-    if (!host)
-    {
-      return false;
-    }
-    mqtt_client.setServer(host, port);
-    return mqtt_client.connect("inputCommunicator");
-  }
-
-  inline void mqttDisconnect()
-  {
-    mqtt_client.disconnect();
-  }
-
-  inline bool mqttConnected()
-  {
-    return mqtt_client.connected();
-  }
-
-  inline void mqttLoop()
-  {
-    mqtt_client.loop();
-  }
-
-  bool mqttPublish()
-  {
-    String data = getDataObjectJson();
-    mqtt_client.publish("inputCommunicator", data.c_str());
-    Serial.println(data.c_str());
-  }
+  inline void setFieldsAmount(size_t fieldsAmt) { fieldsAmount = fieldsAmt; }
 
   bool newDataObject(const char *token, int dataFieldsAmount, double lon = 0.0, double lat = 0.0)
   {
@@ -124,13 +93,57 @@ public:
     return true;
   }
 
+protected:
+  std::vector<DataAttribute> dataHeader;
+  std::vector<DataAttribute> dataFields;
+  int fieldsAmount;
+  size_t memoryAllocated;
+};
+
+class MiddlewareMqtt : public DataObjectImpl
+{
+public:
+  inline MiddlewareMqtt(Client &client) : mqtt_client(client) {}
+  inline ~MiddlewareMqtt() {}
+
+  bool connect(const char *host, int port = 1883)
+  {
+    if (!host)
+    {
+      return false;
+    }
+    mqtt_client.setServer(host, port);
+    return mqtt_client.connect("inputCommunicator");
+  }
+
+  inline void disconnect()
+  {
+    mqtt_client.disconnect();
+  }
+
+  inline bool connected()
+  {
+    return mqtt_client.connected();
+  }
+
+  inline void loop()
+  {
+    mqtt_client.loop();
+  }
+
+  bool publish()
+  {
+    String data = getDataObjectJson();
+    mqtt_client.publish("inputCommunicator", data.c_str());
+    Serial.println(data.c_str());
+  }
+
 private:
   inline size_t jsonObjectSize(size_t tam) { return tam * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
-  inline void setFieldsAmount(size_t fieldsAmount) { this->fieldsAmount = fieldsAmount; }
 
   String getDataObjectJson()
   {
-    if (this->fieldsAmount < (dataFields.size() + DATA_HEADER_FIELDS_AMT))
+    if (fieldsAmount < (dataFields.size() + DATA_HEADER_FIELDS_AMT))
     {
       Serial.println("too much JSON fields passed");
       return "";
@@ -167,12 +180,6 @@ private:
   }
 
   PubSubClient mqtt_client;
-
-  //dataobject
-  std::vector<DataAttribute> dataHeader;
-  std::vector<DataAttribute> dataFields;
-  int fieldsAmount;
-  size_t memoryAllocated;
 };
 
 class MiddlewareDefaultLogger

@@ -12,7 +12,7 @@ char token[] = TOKEN;
 char mqtt_server[] = MQTT_SERVER;
 
 WiFiClient espClient;
-Middleware md(espClient);
+MiddlewareMqtt md(espClient);
 
 void setup()
 {
@@ -53,13 +53,13 @@ void loop()
     return;
   }
 
-  if (!md.mqttConnected())
+  if (!md.connected())
   {
     Serial.print("Connecting to: ");
     Serial.print(mqtt_server);
     Serial.print(" with token ");
     Serial.println(token);
-    if (!md.mqttConnect(mqtt_server))
+    if (!md.connect(mqtt_server))
     {
       Serial.println("Failed to connect");
       return;
@@ -68,7 +68,7 @@ void loop()
 
   md.newDataObject(TOKEN, 4, 1.0, -2.0);
   md.addField("temperature", 25);
-  md.mqttPublish();
+  md.publish();
 
   Serial.println("Sending data...");
 }
