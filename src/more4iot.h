@@ -1,6 +1,6 @@
 
-#ifndef Middleware_Arduino_Sdk_h
-#define Middleware_Arduino_Sdk_h
+#ifndef more4iot_arduino_sdk_h
+#define more4iot_arduino_sdk_h
 
 #define DATA_HEADER_FIELDS_AMT 3
 
