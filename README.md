@@ -1,5 +1,14 @@
 # MORE4IoT Arduino SDK
 
-**See ./examples**
+### ESP32 With Arduino IDE
 
-### ESP32 Config
+[Prerequisites and Installing](https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/)
+
+### Installing MORE4IoT Library
+
+[Installing Additional Arduino Libraries](https://www.arduino.cc/en/guide/libraries)
+
+### See ./examples
+
+- Esp32 and MQTT with Wifi
+- Esp32 and HTTP/REST with Wifi
