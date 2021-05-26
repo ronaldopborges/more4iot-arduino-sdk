@@ -156,7 +156,7 @@ public:
       return false;
     }
     mqtt_client.setServer(host, port);
-    return mqtt_client.connect("inputCommunicator");
+    return mqtt_client.connect("input");
   }
 
   inline void disconnect()
@@ -177,7 +177,7 @@ public:
   bool publish()
   {
     String data = getDataObjectJson();
-    mqtt_client.publish("inputCommunicator", data.c_str());
+    mqtt_client.publish("input", data.c_str());
     Serial.println(data.c_str());
   }
 
