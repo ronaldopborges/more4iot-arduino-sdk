@@ -1,0 +1,12 @@
+{
+    "name": "MORE4IoT",
+    "keywords": "mqtt, iot, middleware",
+    "description": "A library for connecting to the MORE4IoT platform.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/iotufersa/more4iot-arduino-sdk"
+    },
+    "version": "0.1.0",
+    "examples": "examples/*/*.ino",
+    "frameworks": "arduino"
+}

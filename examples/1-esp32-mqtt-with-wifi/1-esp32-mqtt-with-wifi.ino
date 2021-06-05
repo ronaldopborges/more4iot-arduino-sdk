@@ -1,0 +1,76 @@
+
+#include "more4iot.h"
+#include "secrets.h"
+
+#include "WiFi.h"
+
+#define TIME_TO_SEND 10000
+#define HOST "localhost"
+#define PORT 1883
+
+char ssid[] = WIFI_SSID;
+char password[] = WIFI_PASSWORD;
+char token[] = TOKEN;
+char host[] = HOST;
+
+WiFiClient espClient;
+MiddlewareMqtt md(espClient);
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(10);
+
+  // We start by connecting to a WiFi network
+
+  Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void loop()
+{
+  delay(TIME_TO_SEND);
+
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.println("Connecting to AP ...");
+    Serial.print("Attempting to connect to WPA SSID: ");
+    Serial.println(ssid);
+    WiFi.begin(ssid, password);
+    return;
+  }
+
+  if (!md.connected())
+  {
+    Serial.print("Connecting to: ");
+    Serial.print(host);
+    Serial.print(" with token ");
+    Serial.println(token);
+    if (!md.connect(host))
+    {
+      Serial.println("Failed to connect");
+      return;
+    }
+  }
+
+  md.newDataObject(TOKEN, 4, 1.0, -2.0);
+  md.addField("temperature", 25);
+  md.send();
+
+  Serial.println("Sending data...");
+}
