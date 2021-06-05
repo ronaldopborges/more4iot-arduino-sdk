@@ -5,14 +5,18 @@
 #include "WiFi.h"
 
 #define TIME_TO_SEND 10000
+#define HOST "192.168.0.186"
+#define PORT 1883
+#define UUID "deviceXX"
 
 char ssid[] = WIFI_SSID;
 char password[] = WIFI_PASSWORD;
-char token[] = TOKEN;
-char server[] = SERVER;
+char uuid[] = UUID;
+int port = PORT;
+char host[] = HOST;
 
 WiFiClient espClient;
-MiddlewareMqtt md(espClient);
+More4iotMqtt md(espClient);
 
 void setup()
 {
@@ -38,6 +42,8 @@ void setup()
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
+  md.connect(host, port);
 }
 
 void loop()
@@ -53,22 +59,14 @@ void loop()
     return;
   }
 
-  if (!md.connected())
-  {
-    Serial.print("Connecting to: ");
-    Serial.print(server);
-    Serial.print(" with token ");
-    Serial.println(token);
-    if (!md.connect(server))
-    {
-      Serial.println("Failed to connect");
-      return;
-    }
+  if(!md.connected()){
+    Serial.println("disconnected...");
+    md.connect(host, port);
   }
 
-  md.newDataObject(TOKEN, 4, 1.0, -2.0);
+  md.newDataObject(uuid, 4, 1.0, -2.0);
   md.addField("temperature", 25);
-  md.publish();
+  md.send();
 
   Serial.println("Sending data...");
 }

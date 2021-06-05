@@ -11,12 +11,12 @@
 #include <ArduinoHttpClient.h>
 #include <PubSubClient.h>
 
-class MiddlewareDefaultLogger
+class More4iotDefaultLogger
 {
 public:
   static void log(const char *msg);
 };
-using Logger = MiddlewareDefaultLogger;
+using Logger = More4iotDefaultLogger;
 
 class DataAttribute
 {
@@ -24,25 +24,25 @@ class DataAttribute
 
 public:
   inline DataAttribute()
-      : dataAtTypeEnum(TYPE_NONE), dataAtName(NULL), dataAtValue() {}
+      : dataType(TYPE_NONE), dataName(NULL), dataValue() {}
 
   inline DataAttribute(const char *name, int value)
-      : dataAtTypeEnum(TYPE_INT), dataAtName(name), dataAtValue() { dataAtValue.integer = value; }
+      : dataType(TYPE_INT), dataName(name), dataValue() { dataValue.integer = value; }
 
   inline DataAttribute(const char *name, bool value)
-      : dataAtTypeEnum(TYPE_BOOL), dataAtName(name), dataAtValue() { dataAtValue.boolean = value; }
+      : dataType(TYPE_BOOL), dataName(name), dataValue() { dataValue.boolean = value; }
 
   inline DataAttribute(const char *name, double value)
-      : dataAtTypeEnum(TYPE_REAL), dataAtName(name), dataAtValue() { dataAtValue.real = value; }
+      : dataType(TYPE_REAL), dataName(name), dataValue() { dataValue.real = value; }
 
   inline DataAttribute(const char *name, const char *value)
-      : dataAtTypeEnum(TYPE_STR), dataAtName(name), dataAtValue() { dataAtValue.str = value; }
+      : dataType(TYPE_STR), dataName(name), dataValue() { dataValue.str = value; }
 
   const char *toStringValueStr()
   {
-    if (dataAtTypeEnum == TYPE_STR)
+    if (dataType == TYPE_STR)
     {
-      return (String(dataAtName) + String(": ") + String(dataAtValue.str)).c_str();
+      return (String(dataName) + String(": ") + String(dataValue.str)).c_str();
     }
     return NULL;
   }
@@ -67,37 +67,19 @@ private:
     TYPE_STR,
   };
 
-  DataAttributeTypeEnum dataAtTypeEnum;
-  const char *dataAtName;
-  DataAttributeValueUnion dataAtValue;
+  DataAttributeTypeEnum dataType;
+  const char *dataName;
+  DataAttributeValueUnion dataValue;
 };
 
 class DataObjectImpl
 {
-public:
-  inline void setFieldsAmount(size_t fieldsAmt) { fieldsAmount = fieldsAmt; }
-
-  bool newDataObject(const char *token, int dataFieldsAmount, double lon = 0.0, double lat = 0.0)
-  {
-    this->fieldsAmount = dataFieldsAmount + DATA_HEADER_FIELDS_AMT;
-    this->memoryAllocated = JSON_OBJECT_SIZE(this->fieldsAmount);
-    dataHeader.clear();
-    dataFields.clear();
-    dataHeader.push_back(DataAttribute("deviceUuid", token));
-    dataHeader.push_back(DataAttribute("lat", lat));
-    dataHeader.push_back(DataAttribute("lon", lon));
-    Serial.println("Data Object created...");
-    return true;
-  }
-
-  template <typename T>
-  bool addField(const char *nameField, T value)
-  {
-    dataFields.push_back(DataAttribute(nameField, value));
-    return true;
-  }
-
 protected:
+  std::vector<DataAttribute> dataHeader;
+  std::vector<DataAttribute> dataFields;
+  int fieldsAmount;
+  size_t memoryAllocated;
+
   String getDataObjectJson()
   {
     if (fieldsAmount < (dataFields.size() + DATA_HEADER_FIELDS_AMT))
@@ -131,32 +113,75 @@ protected:
       Serial.println("too small buffer for JSON data");
       return "";
     }
+
     serializeJson(jsonRoot, payload);
 
     Serial.println(payload.c_str());
     return payload;
   }
 
-  std::vector<DataAttribute> dataHeader;
-  std::vector<DataAttribute> dataFields;
-  int fieldsAmount;
-  size_t memoryAllocated;
+public:
+  inline void setFieldsAmount(size_t fieldsAmt) { fieldsAmount = fieldsAmt; }
+
+  bool newDataObject(const char *uuid, int dataFieldsAmount, double lon = 0.0, double lat = 0.0)
+  {
+    this->fieldsAmount = dataFieldsAmount + DATA_HEADER_FIELDS_AMT;
+    this->memoryAllocated = JSON_OBJECT_SIZE(this->fieldsAmount);
+    dataHeader.clear();
+    dataFields.clear();
+    dataHeader.push_back(DataAttribute("uuid", uuid));
+    dataHeader.push_back(DataAttribute("lat", lat));
+    dataHeader.push_back(DataAttribute("lon", lon));
+    Serial.println("Data object created...");
+    return true;
+  }
+
+  template <typename T>
+  bool addField(const char *nameField, T value)
+  {
+    dataFields.push_back(DataAttribute(nameField, value));
+    return true;
+  }
 };
 
-class MiddlewareMqtt : public DataObjectImpl
+class More4iot
 {
 public:
-  inline MiddlewareMqtt(Client &client) : mqtt_client(client) {}
-  inline ~MiddlewareMqtt() {}
+  virtual bool connect(const char *host, int port);
+  virtual inline void disconnect();
+  virtual inline void connected();
+  virtual bool send();
+};
+
+class More4iotMqtt : public DataObjectImpl
+{
+private:
+  inline size_t jsonObjectSize(size_t tam) { return tam * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
+  PubSubClient mqtt_client;
+  String topicPublish = "input";
+  String user = "more4iot";
+  String pass = "1234";
+
+public:
+  inline More4iotMqtt(Client &client)
+      : mqtt_client(client) {}
+  inline ~More4iotMqtt() {}
 
   bool connect(const char *host, int port = 1883)
   {
     if (!host)
     {
+      Serial.println("Failed to connect: host not found...");
       return false;
     }
+    Serial.println("putting mqtt host and port...");
+    Serial.println(host);
+    Serial.println(port);
     mqtt_client.setServer(host, port);
-    return mqtt_client.connect("input");
+    Serial.println("connecting mqtt host with user and pass...");
+    Serial.println(user);
+    Serial.println(pass);
+    return mqtt_client.connect("resource_id", user.c_str(), pass.c_str());
   }
 
   inline void disconnect()
@@ -174,34 +199,33 @@ public:
     mqtt_client.loop();
   }
 
-  bool publish()
+  bool send()
   {
+    if (!this->connected())
+    {
+      Serial.println("not send...");
+      return false;
+    }
     String data = getDataObjectJson();
-    mqtt_client.publish("input", data.c_str());
+    mqtt_client.publish(topicPublish.c_str(), data.c_str());
     Serial.println(data.c_str());
+    return true;
   }
-
-private:
-  inline size_t jsonObjectSize(size_t tam) { return tam * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
-
-  PubSubClient mqtt_client;
 };
 
-class MiddlewareHttp : public DataObjectImpl
+class More4iotHttp : public DataObjectImpl
 {
 public:
-  inline MiddlewareHttp(Client &client,
-                        const char *host, int port = 80)
-      : httpClient(client, host, port), httpHost(host), httpPort(port)
-  {
-  }
-  inline ~MiddlewareHttp() {}
+  inline More4iotHttp(Client &client,
+                      const char *host, int port = 80)
+      : httpClient(client, host, port), host(host), port(port) {}
+  inline ~More4iotHttp() {}
 
   bool sendJson()
   {
     if (!httpClient.connected())
     {
-      if (!httpClient.connect(httpHost, httpPort))
+      if (!httpClient.connect(host, port))
       {
         Serial.println("connect to server failed");
         return false;
@@ -221,8 +245,8 @@ public:
 
 private:
   HttpClient httpClient;
-  const char *httpHost;
-  int httpPort;
+  const char *host;
+  int port;
 };
 
 #endif

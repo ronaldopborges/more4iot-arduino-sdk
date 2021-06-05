@@ -1,22 +1,22 @@
 #######################################
-# Syntax Coloring Map For Middleware
+# Syntax Coloring Map For MORE4IoT
 #######################################
 
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
 
-Middleware	KEYWORD1
+MORE4IoT	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-mqttConnect 	  KEYWORD2
-mqttConnected 	KEYWORD2
-mqttDisconnect  KEYWORD2
-mqttPublish     KEYWORD2
-mqttLoop	      KEYWORD2
+connect         KEYWORD2
+connected 	    KEYWORD2
+disconnect      KEYWORD2
+send            KEYWORD2
+loop	          KEYWORD2
 newDataObject   KEYWORD2
 addField        KEYWORD2
 
