@@ -77,18 +77,13 @@ class DataObjectImpl
 protected:
   std::vector<DataAttribute> dataHeader;
   std::vector<DataAttribute> dataFields;
-  int fieldsAmount;
-  size_t memoryAllocated;
+
+  inline size_t jsonObjectSize(size_t size) { return size * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
 
   String getDataObjectJson()
   {
-    if (fieldsAmount < (dataFields.size() + DATA_HEADER_FIELDS_AMT))
-    {
-      Serial.println("too much JSON fields passed");
-      return "";
-    }
-    String payload;
-    DynamicJsonDocument jsonBuffer(memoryAllocated);
+    size_t bufferSize = jsonObjectSize(dataHeader.size() + dataFields.size() + 1);
+    DynamicJsonDocument jsonBuffer(bufferSize);
     JsonObject jsonRoot = jsonBuffer.to<JsonObject>();
 
     for (DataAttribute d : dataHeader)
@@ -108,23 +103,16 @@ protected:
         return "";
       }
     }
-    if (measureJson(jsonBuffer) > memoryAllocated - 1)
-    {
-      Serial.println("too small buffer for JSON data");
-      return "";
-    }
 
+    String payload;
     serializeJson(jsonRoot, payload);
     return payload;
   }
 
 public:
-  inline void setFieldsAmount(size_t fieldsAmt) { fieldsAmount = fieldsAmt; }
 
-  bool newDataObject(const char *uuid, int dataFieldsAmount, double lon = 0.0, double lat = 0.0)
+  bool newDataObject(const char *uuid, double lon = 0.0, double lat = 0.0)
   {
-    this->fieldsAmount = dataFieldsAmount + DATA_HEADER_FIELDS_AMT;
-    this->memoryAllocated = JSON_OBJECT_SIZE(this->fieldsAmount);
     dataHeader.clear();
     dataFields.clear();
     dataHeader.push_back(DataAttribute("uuid", uuid));
@@ -157,7 +145,6 @@ public:
 class More4iotMqtt : public More4iot
 {
 private:
-  inline size_t jsonObjectSize(size_t tam) { return tam * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
   PubSubClient mqtt_client;
   String topicPublish = "input";
   String user = "more4iot";
@@ -177,7 +164,7 @@ public:
     }
     Serial.println("putting mqtt host and port...");
     mqtt_client.setServer(host, port);
-    Serial.println("connecting mqtt host with user and pass...");
+    Serial.println("connecting mqtt...");
     return mqtt_client.connect("resource_id", user.c_str(), pass.c_str());
   }
 

@@ -49,8 +49,6 @@ void setup()
 
 void loop()
 {
-  delay(TIME_TO_SEND);
-
   if (WiFi.status() != WL_CONNECTED){
     Serial.println("Connecting to AP ...");
     Serial.print("Attempting to connect to WPA SSID: ");
@@ -62,13 +60,16 @@ void loop()
   if(!md->connected()){
     Serial.println("disconnected...");
     md->connect(host, port);
+    delay(1000);
     return;
   }
   
-  // UUID, fields amount, latitude and longitude (can be 0.0, 0.0)
-  md->newDataObject(uuid, 4, 1.0, -2.0);
+  // UUID, latitude and longitude (can be 0.0, 0.0)
+  md->newDataObject(uuid, 1.0, -2.0);
+  // data fields
   md->addField("temperature", 25);
   md->send();
 
-  Serial.println("Sending data...");
+  Serial.println("data sent");
+  delay(TIME_TO_SEND);
 }
