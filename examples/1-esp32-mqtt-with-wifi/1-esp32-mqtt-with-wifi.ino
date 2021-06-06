@@ -16,14 +16,15 @@ int port = PORT;
 char host[] = HOST;
 
 WiFiClient espClient;
-More4iotMqtt md(espClient);
+
+//More4iotMqtt md(espClient);
+// or
+More4iot * md = new More4iotMqtt(espClient);
 
 void setup()
 {
   Serial.begin(115200);
   delay(10);
-
-  // We start by connecting to a WiFi network
 
   Serial.println();
   Serial.println();
@@ -43,15 +44,14 @@ void setup()
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  md.connect(host, port);
+  md->connect(host, port);
 }
 
 void loop()
 {
   delay(TIME_TO_SEND);
 
-  if (WiFi.status() != WL_CONNECTED)
-  {
+  if (WiFi.status() != WL_CONNECTED){
     Serial.println("Connecting to AP ...");
     Serial.print("Attempting to connect to WPA SSID: ");
     Serial.println(ssid);
@@ -59,14 +59,16 @@ void loop()
     return;
   }
 
-  if(!md.connected()){
+  if(!md->connected()){
     Serial.println("disconnected...");
-    md.connect(host, port);
+    md->connect(host, port);
+    return;
   }
-
-  md.newDataObject(uuid, 4, 1.0, -2.0);
-  md.addField("temperature", 25);
-  md.send();
+  
+  // UUID, fields amount, latitude and longitude (can be 0.0, 0.0)
+  md->newDataObject(uuid, 4, 1.0, -2.0);
+  md->addField("temperature", 25);
+  md->send();
 
   Serial.println("Sending data...");
 }

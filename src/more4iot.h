@@ -115,8 +115,6 @@ protected:
     }
 
     serializeJson(jsonRoot, payload);
-
-    Serial.println(payload.c_str());
     return payload;
   }
 
@@ -144,16 +142,19 @@ public:
   }
 };
 
-class More4iot
+class More4iot : public DataObjectImpl
 {
 public:
-  virtual bool connect(const char *host, int port);
-  virtual inline void disconnect();
-  virtual inline void connected();
-  virtual bool send();
+  More4iot(){};
+  ~More4iot(){};
+  virtual bool connect(const char *host, int port){};
+  virtual inline void disconnect(){};
+  virtual inline bool connected(){};
+  virtual bool send(){};
+  virtual void loop(){};
 };
 
-class More4iotMqtt : public DataObjectImpl
+class More4iotMqtt : public More4iot
 {
 private:
   inline size_t jsonObjectSize(size_t tam) { return tam * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
@@ -167,7 +168,7 @@ public:
       : mqtt_client(client) {}
   inline ~More4iotMqtt() {}
 
-  bool connect(const char *host, int port = 1883)
+  bool connect(const char *host, int port = 1883) override
   {
     if (!host)
     {
@@ -175,31 +176,27 @@ public:
       return false;
     }
     Serial.println("putting mqtt host and port...");
-    Serial.println(host);
-    Serial.println(port);
     mqtt_client.setServer(host, port);
     Serial.println("connecting mqtt host with user and pass...");
-    Serial.println(user);
-    Serial.println(pass);
     return mqtt_client.connect("resource_id", user.c_str(), pass.c_str());
   }
 
-  inline void disconnect()
+  inline void disconnect() override
   {
     mqtt_client.disconnect();
   }
 
-  inline bool connected()
+  inline bool connected() override
   {
     return mqtt_client.connected();
   }
 
-  inline void loop()
+  void loop() override
   {
     mqtt_client.loop();
   }
 
-  bool send()
+  bool send() override
   {
     if (!this->connected())
     {
@@ -213,6 +210,7 @@ public:
   }
 };
 
+/*
 class More4iotHttp : public DataObjectImpl
 {
 public:
@@ -248,5 +246,5 @@ private:
   const char *host;
   int port;
 };
-
+*/
 #endif
