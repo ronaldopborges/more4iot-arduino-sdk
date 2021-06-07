@@ -110,7 +110,6 @@ protected:
   }
 
 public:
-
   bool newDataObject(const char *uuid, double lon = 0.0, double lat = 0.0)
   {
     dataHeader.clear();
@@ -197,41 +196,69 @@ public:
   }
 };
 
-/*
-class More4iotHttp : public DataObjectImpl
+class More4iotHttp : public More4iot
 {
+private:
+  HttpClient httpClient;
+  const char *host;
+  int port;
+  String route = "/inputCommunicator";
+  String contentType = "application/json; charset=utf-8";
+
 public:
   inline More4iotHttp(Client &client,
                       const char *host, int port = 80)
       : httpClient(client, host, port), host(host), port(port) {}
   inline ~More4iotHttp() {}
 
-  bool sendJson()
+  bool connect(const char *host, int port)
   {
-    if (!httpClient.connected())
+    if (!httpClient.connect(host, port))
     {
-      if (!httpClient.connect(host, port))
+      Serial.println("connect to server failed");
+      return false;
+    }
+    return true;
+  };
+
+  inline void disconnect()
+  {
+    httpClient.stop();
+  };
+
+  bool connected()
+  {
+    return httpClient.connected();
+  };
+
+  void loop(){};
+
+  bool send()
+  {
+
+    if (!this->connected())
+    {
+      if (!this->connect(host, port))
       {
-        Serial.println("connect to server failed");
         return false;
       }
     }
-
-    bool rc = true;
-    String path = String("/inputCommunicator");
-    if (!httpClient.post(path, "application/json", getDataObjectJson()) || (httpClient.responseStatusCode() != HTTP_SUCCESS))
+    String payload = getDataObjectJson();
+    Serial.println(payload);
+    httpClient.post(route, contentType, payload);
+    if (httpClient.responseStatusCode() != HTTP_SUCCESS && httpClient.responseStatusCode() != HTTP_ERROR_INVALID_RESPONSE)
     {
-      rc = false;
+      Serial.print("data not sent: ");
+      Serial.println(httpClient.responseStatusCode());
+      Serial.println(httpClient.responseBody());
+      this->disconnect();
+      return false;
     }
 
-    httpClient.stop();
-    return rc;
+    this->disconnect();
+    Serial.println("data sent");
+    return true;
   }
-
-private:
-  HttpClient httpClient;
-  const char *host;
-  int port;
 };
-*/
+
 #endif
