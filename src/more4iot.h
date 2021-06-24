@@ -10,6 +10,7 @@
 
 #include <ArduinoHttpClient.h>
 #include <PubSubClient.h>
+#include <coap-simple.h>
 
 class More4iotDefaultLogger
 {
@@ -117,7 +118,7 @@ public:
     dataHeader.push_back(DataAttribute("uuid", uuid));
     dataHeader.push_back(DataAttribute("lat", lat));
     dataHeader.push_back(DataAttribute("lon", lon));
-    Serial.println("Data object created...");
+    Serial.println("data packet created...");
     return true;
   }
 
@@ -134,6 +135,7 @@ class More4iot : public DataObjectImpl
 public:
   More4iot(){};
   ~More4iot(){};
+  bool connect(){};
   virtual bool connect(const char *host, int port){};
   virtual inline void disconnect(){};
   virtual inline bool connected(){};
@@ -258,6 +260,40 @@ public:
     this->disconnect();
     Serial.println("data sent");
     return true;
+  }
+};
+
+class More4iotCoap : public More4iot
+{
+private:
+  Coap coap;
+  // endpoint for more4iot input communicator
+  String endpointInput = "input";
+  // more4iot connection
+  IPAddress ip;
+  int port;
+
+public:
+  inline More4iotCoap(UDP& udp, IPAddress& ip, int port)
+      : coap(udp), ip(ip), port(port) {}
+  inline ~More4iotCoap() {}
+
+  bool connect();
+  void loop() override;
+  bool send() override;
+
+  inline void disconnect() override
+  {
+    return;
+  }
+
+  inline bool connected() override
+  {
+    return true;
+  }
+
+  void response(CoapCallback c){
+    coap.response(c);
   }
 };
 

@@ -28,3 +28,21 @@ void More4iotDefaultLogger::log(const char *msg)
   Serial.print(F("[MORE4IoT] "));
   Serial.println(msg);
 }
+
+bool More4iotCoap::connect()
+{
+  coap.start();
+}
+
+void More4iotCoap::loop()
+{
+  coap.loop();
+}
+
+bool More4iotCoap::send()
+{
+  String data = getDataObjectJson();
+  coap.put(ip, port, endpointInput.c_str(), data.c_str());
+  Serial.println(data.c_str());
+  return true;
+}
