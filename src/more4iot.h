@@ -22,6 +22,7 @@ using Logger = More4iotDefaultLogger;
 class DataAttribute
 {
   friend class DataObjectImpl;
+  friend class Action;
 
 public:
   inline DataAttribute()
@@ -56,7 +57,7 @@ private:
     const char *str;
     bool boolean;
     int integer;
-    float real;
+    double real;
   };
 
   enum DataAttributeTypeEnum
@@ -130,7 +131,37 @@ public:
   }
 };
 
-class More4iot : public DataObjectImpl
+class Action {
+public:
+  inline Action(){}
+  inline ~Action() {}
+
+  template<typename T>
+  T commands(const uint8_t *payload, const char *key){
+    if (payload == nullptr) {
+      return false;
+    }
+
+    StaticJsonDocument<64> filter;
+    DynamicJsonDocument json(1024);
+    // filter for two fields EX: commands/light or commands/water-pump
+    filter["commands"][key] = true;
+    DeserializationError error = deserializeJson(json, payload, DeserializationOption::Filter(filter));
+    
+    // Test if parsing succeeds.
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      return false;
+    }
+
+    // json value to type from T
+    JsonObject obj = json.as<JsonObject>();
+    return obj["commands"][key].as<T>();
+  }
+};
+
+class More4iot : public DataObjectImpl, public Action
 {
 public:
   More4iot(){};
@@ -294,6 +325,14 @@ public:
 
   void response(CoapCallback c){
     coap.response(c);
+  }
+
+  void server(CoapCallback c, String url){
+    coap.server(c, url);
+  }
+
+  void sendResponse(IPAddress ip, int port, uint16_t messageid, const char *payload){
+    coap.sendResponse(ip,port,messageid,payload);
   }
 };
 
