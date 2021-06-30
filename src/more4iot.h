@@ -137,6 +137,29 @@ public:
   inline ~Action() {}
 
   template<typename T>
+  T data(const uint8_t *payload, const char *key){
+    if (payload == nullptr) {
+      return false;
+    }
+
+    StaticJsonDocument<64> filter;
+    DynamicJsonDocument json(1024);
+    filter["data"][key] = true;
+    DeserializationError error = deserializeJson(json, payload, DeserializationOption::Filter(filter));
+    
+    // Test if parsing succeeds.
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      return false;
+    }
+
+    // json value to type from T
+    JsonObject obj = json.as<JsonObject>();
+    return obj["data"][key].as<T>();
+  }
+
+  template<typename T>
   T commands(const uint8_t *payload, const char *key){
     if (payload == nullptr) {
       return false;
@@ -177,42 +200,45 @@ public:
 class More4iotMqtt : public More4iot
 {
 private:
-  PubSubClient mqtt_client;
+  PubSubClient mqttClient;
   String topicPublish = "input";
   String user = "more4iot";
   String pass = "1234";
+  IPAddress ip;
+  int port;
+
 
 public:
-  inline More4iotMqtt(Client &client)
-      : mqtt_client(client) {}
+  inline More4iotMqtt(Client &client, IPAddress &ip, int port = 1883)
+      : mqttClient(client), ip(ip), port(port){}
   inline ~More4iotMqtt() {}
 
-  bool connect(const char *host, int port = 1883) override
+  bool connect()
   {
-    if (!host)
+    if (!ip)
     {
       Serial.println("Failed to connect: host not found...");
       return false;
     }
     Serial.println("putting mqtt host and port...");
-    mqtt_client.setServer(host, port);
+    mqttClient.setServer(ip, port);
     Serial.println("connecting mqtt...");
-    return mqtt_client.connect("resource_id", user.c_str(), pass.c_str());
+    return mqttClient.connect("resource_id", user.c_str(), pass.c_str());
   }
 
   inline void disconnect() override
   {
-    mqtt_client.disconnect();
+    mqttClient.disconnect();
   }
 
   inline bool connected() override
   {
-    return mqtt_client.connected();
+    return mqttClient.connected();
   }
 
   void loop() override
   {
-    mqtt_client.loop();
+    mqttClient.loop();
   }
 
   bool send() override
@@ -223,7 +249,7 @@ public:
       return false;
     }
     String data = getDataObjectJson();
-    mqtt_client.publish(topicPublish.c_str(), data.c_str());
+    mqttClient.publish(topicPublish.c_str(), data.c_str());
     Serial.println(data.c_str());
     return true;
   }
@@ -305,7 +331,7 @@ private:
   int port;
 
 public:
-  inline More4iotCoap(UDP& udp, IPAddress& ip, int port)
+  inline More4iotCoap(UDP& udp, IPAddress& ip, int port = 5683)
       : coap(udp), ip(ip), port(port) {}
   inline ~More4iotCoap() {}
 

@@ -15,7 +15,7 @@ char ssid[] = WIFI_SSID;
 char password[] = WIFI_PASSWORD;
 
 // more4iot coap server ip and port
-IPAddress ip(192,168,0,186);
+IPAddress ip(192,168,0,5);
 int port = 5683;
 
 // UDP and MORE4IoT CoAP class
