@@ -137,7 +137,7 @@ public:
   inline ~Action() {}
 
   template<typename T>
-  T data(const uint8_t *payload, const char *key){
+  T getData(const uint8_t *payload, const char *key){
     if (payload == nullptr) {
       return false;
     }
@@ -160,7 +160,7 @@ public:
   }
 
   template<typename T>
-  T commands(const uint8_t *payload, const char *key){
+  T getCommand(const uint8_t *payload, const char *key){
     if (payload == nullptr) {
       return false;
     }

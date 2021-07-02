@@ -12,13 +12,14 @@ char ssid[] = WIFI_SSID;
 char password[] = WIFI_PASSWORD;
 int soilMoisture;
 int valueA;
-int seco = 4095;
-float unidade = 30.95;
-int result;
+int minValue = 800;
+int maxValue = 4095;
+int drySoil = 30;
+// application config
 
 // MORE4IoT Config
-#define TIME_TO_SEND 30000
-#define UUID "6e0efe80-d9b0-11eb-ab9c-b52141224ba9"
+#define TIME_TO_SEND 10000
+#define UUID "651e29c0-da70-11eb-b8e1-b757525fcd00"
 IPAddress ip(192,168,0,5);
 int coap_port = 5683;
 int mqtt_port = 1883;
@@ -33,8 +34,10 @@ More4iotCoap coap(udpClient, ip, coap_port);
 void waterPump(CoapPacket &packet, IPAddress ip, int port) {
   Serial.println("[Light] ON/OFF");
 
-  int value = coap.data<int>(packet.payload, "soil-moisture");
-  if (value < 30){
+  drySoil = coap.getCommand<int>(packet.payload, "dry-soil");
+
+  soilMoisture = coap.getData<int>(packet.payload, "soil-moisture");
+  if (soilMoisture < drySoil){
     digitalWrite(pinActuator, HIGH);
   } else {
     digitalWrite(pinActuator, LOW);
@@ -100,11 +103,11 @@ void loop()
     return;
   }
 
-  // soil_moisture = analog(1000-4095) to percentage (0-100)
+  // soil_moisture = analog(800-4095) to percentage (0-100)
+  // 4095 -> 0
+  // 800 -> 100
   valueA = analogRead(pinSensor);
-  Serial.println(valueA);
-  soilMoisture = (int)((seco-valueA)/unidade);
-  Serial.println(soilMoisture);
+  soilMoisture = map(valueA, maxValue, minValue, 0, 100);
   
   // UUID, latitude and longitude (can be 0.0, 0.0)
   mqtt.newDataObject(UUID, 0.0, 0.0);
