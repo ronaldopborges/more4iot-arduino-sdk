@@ -6,9 +6,10 @@
 
 ### Dependencies
 
- - ArduinoJson - for JSON
- - PubSubClient - for MQTT protocol
- - ArduinoHttpClient - for HTTP protocol
+ - ArduinoJson - JSON data packet
+ - PubSubClient - MQTT protocol
+ - ArduinoHttpClient - HTTP protocol
+ - CoAP_simple_library - CoAP protocol
 
 ### Installing MORE4IoT Library
 
