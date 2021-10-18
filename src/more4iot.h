@@ -82,7 +82,7 @@ protected:
 
   inline size_t jsonObjectSize(size_t size) { return size * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
 
-  String getDataObjectJson()
+  String getDataPacketJson()
   {
     size_t bufferSize = jsonObjectSize(dataHeader.size() + dataFields.size() + 1);
     DynamicJsonDocument jsonBuffer(bufferSize);
@@ -112,7 +112,16 @@ protected:
   }
 
 public:
-  bool newDataObject(const char *uuid, double lon = 0.0, double lat = 0.0)
+  bool newDataPacket(const char *uuid)
+  {
+    dataHeader.clear();
+    dataFields.clear();
+    dataHeader.push_back(DataAttribute("uuid", uuid));
+    Serial.println("data packet created...");
+    return true;
+  }
+
+  bool newDataPacket(const char *uuid, double lon = 0.0, double lat = 0.0)
   {
     dataHeader.clear();
     dataFields.clear();
@@ -248,7 +257,7 @@ public:
       Serial.println("not send...");
       return false;
     }
-    String data = getDataObjectJson();
+    String data = getDataPacketJson();
     mqttClient.publish(topicPublish.c_str(), data.c_str());
     Serial.println(data.c_str());
     return true;
@@ -302,7 +311,7 @@ public:
         return false;
       }
     }
-    String payload = getDataObjectJson();
+    String payload = getDataPacketJson();
     Serial.println(payload);
     httpClient.post(route, contentType, payload);
     if (httpClient.responseStatusCode() != HTTP_SUCCESS && httpClient.responseStatusCode() != HTTP_ERROR_INVALID_RESPONSE)

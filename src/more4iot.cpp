@@ -41,7 +41,7 @@ void More4iotCoap::loop()
 
 bool More4iotCoap::send()
 {
-  String data = getDataObjectJson();
+  String data = getDataPacketJson();
   coap.put(ip, port, endpointInput.c_str(), data.c_str());
   Serial.println(data.c_str());
   return true;
