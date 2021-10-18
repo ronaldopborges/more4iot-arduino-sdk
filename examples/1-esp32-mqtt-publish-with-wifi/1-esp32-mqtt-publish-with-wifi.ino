@@ -66,7 +66,7 @@ void loop()
   }
   
   // UUID, latitude and longitude (can be 0.0, 0.0)
-  md->newDataObject(uuid, 1.0, -2.0);
+  md->newDataPacket(uuid, 1.0, -2.0);
   // data fields
   md->addField("temperature", 25);
   md->send();

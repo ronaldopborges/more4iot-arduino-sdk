@@ -54,7 +54,7 @@ void loop()
     return;
   }
 
-  md->newDataObject(uuid, 1.0, -2.0);
+  md->newDataPacket(uuid, 1.0, -2.0);
   md->addField("temperature", 25);
   md->addField("humidity", 60);
   md->send();

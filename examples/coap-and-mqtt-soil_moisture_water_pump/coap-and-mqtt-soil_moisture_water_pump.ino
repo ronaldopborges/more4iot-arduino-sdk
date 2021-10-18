@@ -110,7 +110,7 @@ void loop()
   soilMoisture = map(valueA, maxValue, minValue, 0, 100);
   
   // UUID, latitude and longitude (can be 0.0, 0.0)
-  mqtt.newDataObject(UUID, 0.0, 0.0);
+  mqtt.newDataPacket(UUID, 0.0, 0.0);
   // data fields
   mqtt.addField("soil-moisture",soilMoisture);
   mqtt.send();
