@@ -219,7 +219,7 @@ private:
 
 public:
   inline More4iotMqtt(Client &client, IPAddress &ip, int port = 1883, String user = "more4iot", String pass = "1234")
-      : mqttClient(client), ip(ip), port(port){}
+      : mqttClient(client), ip(ip), port(port), user(user), pass(pass) {}
   inline ~More4iotMqtt() {}
 
   bool connect()
