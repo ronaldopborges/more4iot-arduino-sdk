@@ -45,7 +45,7 @@ void setup()
   Serial.print("\nWiFi connected\nIP address: ");
   Serial.println(WiFi.localIP());
 
-  md->receive(SUBSCRIBE_TOPIC, callback())
+  md->receive(SUBSCRIBE_TOPIC, callback());
   
   md->connect();
 }
