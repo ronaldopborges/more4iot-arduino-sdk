@@ -112,15 +112,6 @@ protected:
   }
 
 public:
-  // bool newDataPacket(const char *uuid)
-  // {
-  //   dataHeader.clear();
-  //   dataFields.clear();
-  //   dataHeader.push_back(DataAttribute("uuid", uuid));
-  //   Serial.println("data packet created...");
-  //   return true;
-  // }
-
   bool newDataPacket(const char *uuid, double lon = 0.0, double lat = 0.0)
   {
     dataHeader.clear();
