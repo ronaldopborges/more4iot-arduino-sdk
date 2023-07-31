@@ -211,14 +211,14 @@ class More4iotMqtt : public More4iot
 private:
   PubSubClient mqttClient;
   String topicPublish = "input";
-  String user = "more4iot";
-  String pass = "1234";
+  String topicSubscribe;
+  String user;
+  String pass;
   IPAddress ip;
   int port;
 
-
 public:
-  inline More4iotMqtt(Client &client, IPAddress &ip, int port = 1883)
+  inline More4iotMqtt(Client &client, IPAddress &ip, int port = 1883, String user = "more4iot", String pass = "1234")
       : mqttClient(client), ip(ip), port(port){}
   inline ~More4iotMqtt() {}
 
@@ -261,6 +261,13 @@ public:
     mqttClient.publish(topicPublish.c_str(), data.c_str());
     Serial.println(data.c_str());
     return true;
+  }
+  
+  typedef void (*MqttCallback)(char*, byte*, unsigned int);
+  
+  void receive(String topic, MqttCallback userCallback) {
+    mqttClient.setCallback(userCallback);
+    mqttClient.subscribe(topic.c_str());
   }
 };
 
