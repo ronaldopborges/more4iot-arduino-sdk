@@ -1,20 +1,21 @@
-
 #include "more4iot.h"
-#include "secrets.h"
+#include "secrets.h" //wifi and server credentials
 #include "WiFi.h"
 
 #define TIME_TO_SEND 10000
 #define SERVER 192,168,0,186 //MORE4IOT
-#define PORT 1883
+//#define PORT 1883 //Optional. Standad value is 1883.
 #define UUID "deviceXX"
 
 IPAddress serverIp(SERVER);
 
 WiFiClient espClient;
 
-//More4iotMqtt md(espClient);
-// or
-More4iotMqtt * md = new More4iotMqtt(espClient, serverIp, PORT);
+More4iotMqtt md(espClient, serverIp);
+// OR   
+// More4iotMqtt md(espClient, serverIp, PORT);
+// More4iotMqtt md(espClient, serverIp, PORT, USER, PASS);
+// PORT, USER and PASS are opitionals. If not informed standard values are used.
 
 void setup()
 {
@@ -61,6 +62,8 @@ void loop()
   // data fields
   md->addField("temperature", 25);
   md->send();
+
+  md->loop();
 
   Serial.println("data sent");
   delay(TIME_TO_SEND);
