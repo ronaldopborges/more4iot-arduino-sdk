@@ -11,8 +11,9 @@ IPAddress serverIp(SERVER);
 
 WiFiClient espClient;
 
-More4iotMqtt md(espClient, serverIp);
+More4iot * md = new More4iotMqtt(espClient, serverIp);
 // OR   
+// More4iotMqtt md(espClient, serverIp);
 // More4iotMqtt md(espClient, serverIp, PORT);
 // More4iotMqtt md(espClient, serverIp, PORT, USER, PASS);
 // PORT, USER and PASS are opitionals. If not informed standard values are used.
