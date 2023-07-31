@@ -198,11 +198,14 @@ class More4iot : public DataObjectImpl, public Action
 public:
   More4iot(){};
   ~More4iot(){};
-  bool connect(){};
+  virtual bool connect(){};
   virtual bool connect(const char *host, int port){};
   virtual inline void disconnect(){};
   virtual inline bool connected(){};
   virtual bool send(){};
+  virtual bool send(String topic){};
+  virtual bool receive(){};
+  virtual bool receive(String topic){};
   virtual void loop(){};
 };
 
