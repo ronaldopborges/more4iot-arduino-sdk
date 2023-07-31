@@ -1,38 +1,30 @@
 
 #include "more4iot.h"
 #include "secrets.h"
-
 #include "WiFi.h"
 
 #define TIME_TO_SEND 10000
-
-#define HOST "192.168.0.186"
+#define SERVER 192,168,0,186 //MORE4IOT
 #define PORT 1883
 #define UUID "deviceXX"
 
-char ssid[] = WIFI_SSID;
-char password[] = WIFI_PASSWORD;
-char uuid[] = UUID;
-int port = PORT;
-char host[] = HOST;
+IPAddress serverIp(SERVER);
 
 WiFiClient espClient;
 
 //More4iotMqtt md(espClient);
 // or
-More4iot * md = new More4iotMqtt(espClient);
+More4iotMqtt * md = new More4iotMqtt(espClient, serverIp, PORT);
 
 void setup()
 {
   Serial.begin(115200);
   delay(10);
+  
+  Serial.print("\n\nConnecting to ");
+  Serial.println(WIFI_SSID);
 
-  Serial.println();
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -40,12 +32,10 @@ void setup()
     Serial.print(".");
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
+  Serial.print("\nWiFi connected\nIP address: ");
   Serial.println(WiFi.localIP());
 
-  md->connect(host, port);
+  md->connect();
 }
 
 void loop()
@@ -53,20 +43,21 @@ void loop()
   if (WiFi.status() != WL_CONNECTED){
     Serial.println("Connecting to AP ...");
     Serial.print("Attempting to connect to WPA SSID: ");
-    Serial.println(ssid);
-    WiFi.begin(ssid, password);
+    Serial.println(WIFI_SSID);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     return;
   }
 
   if(!md->connected()){
-    Serial.println("disconnected...");
-    md->connect(host, port);
+    Serial.println("disconnected to MORE4IoT...");
+    md->connect();
+    Serial.println("Reconected!");
     delay(1000);
     return;
   }
   
   // UUID, latitude and longitude (can be 0.0, 0.0)
-  md->newDataPacket(uuid, 1.0, -2.0);
+  md->newDataPacket(UUID, 1.0, -2.0);
   // data fields
   md->addField("temperature", 25);
   md->send();
