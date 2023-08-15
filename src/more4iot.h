@@ -1,0 +1,275 @@
+#ifndef more4iot_arduino_sdk_h
+#define more4iot_arduino_sdk_h
+
+#define DATA_HEADER_FIELDS_AMT 3
+
+#include <vector>
+#include <ArduinoJson.h>
+#include "ArduinoJson/Polyfills/type_traits.hpp"
+
+#include <ArduinoHttpClient.h>
+#include <PubSubClient.h>
+#include <coap-simple.h>
+
+class More4iotDefaultLogger
+{
+public:
+  static void log(const char *msg);
+};
+using Logger = More4iotDefaultLogger;
+
+class DataAttribute
+{
+  friend class DataObjectImpl;
+  friend class Action;
+
+public:
+  inline DataAttribute()
+      : dataType(TYPE_NONE), dataName(NULL), dataValue() {}
+
+  inline DataAttribute(const char *name, int value)
+      : dataType(TYPE_INT), dataName(name), dataValue() { dataValue.integer = value; }
+
+  inline DataAttribute(const char *name, bool value)
+      : dataType(TYPE_BOOL), dataName(name), dataValue() { dataValue.boolean = value; }
+
+  inline DataAttribute(const char *name, double value)
+      : dataType(TYPE_REAL), dataName(name), dataValue() { dataValue.real = value; }
+
+  inline DataAttribute(const char *name, const char *value)
+      : dataType(TYPE_STR), dataName(name), dataValue() { dataValue.str = value; }
+
+  const char *toStringValueStr()
+  {
+    if (dataType == TYPE_STR)
+    {
+      return (String(dataName) + String(": ") + String(dataValue.str)).c_str();
+    }
+    return NULL;
+  }
+
+  bool serializeDataAt(JsonObject &jsonObj) const;
+
+private:
+  union DataAttributeValueUnion
+  {
+    const char *str;
+    bool boolean;
+    int integer;
+    double real;
+  };
+
+  enum DataAttributeTypeEnum
+  {
+    TYPE_NONE,
+    TYPE_BOOL,
+    TYPE_INT,
+    TYPE_REAL,
+    TYPE_STR,
+  };
+
+  DataAttributeTypeEnum dataType;
+  const char *dataName;
+  DataAttributeValueUnion dataValue;
+};
+
+class DataObjectImpl
+{
+protected:
+  std::vector<DataAttribute> dataHeader;
+  std::vector<DataAttribute> dataFields;
+
+  inline size_t jsonObjectSize(size_t size) { return size * sizeof(ARDUINOJSON_NAMESPACE::VariantSlot); }
+
+  String getDataPacketJson()
+  {
+    size_t bufferSize = jsonObjectSize(dataHeader.size() + dataFields.size() + 1);
+    DynamicJsonDocument jsonBuffer(bufferSize);
+    JsonObject jsonRoot = jsonBuffer.to<JsonObject>();
+
+    for (DataAttribute d : dataHeader)
+    {
+      if (d.serializeDataAt(jsonRoot) == false)
+      {
+        Serial.println("unable to serialize data");
+        return "";
+      }
+    }
+    JsonObject jsonData = jsonRoot.createNestedObject("data");
+    for (DataAttribute d : dataFields)
+    {
+      if (d.serializeDataAt(jsonData) == false)
+      {
+        Serial.println("unable to serialize data");
+        return "";
+      }
+    }
+
+    String payload;
+    serializeJson(jsonRoot, payload);
+    return payload;
+  }
+
+public:
+  bool newDataPacket(const char *uuid, double lon = 0.0, double lat = 0.0)
+  {
+    dataHeader.clear();
+    dataFields.clear();
+    dataHeader.push_back(DataAttribute("uuid", uuid));
+    if (lat!=0.0){
+      dataHeader.push_back(DataAttribute("lat", lat));
+    }
+    if (lon!=0.0){
+      dataHeader.push_back(DataAttribute("lon", lon));
+    }
+    Serial.println("data packet created...");
+    return true;
+  }
+
+  template <typename T>
+  bool addField(const char *nameField, T value)
+  {
+    dataFields.push_back(DataAttribute(nameField, value));
+    return true;
+  }
+};
+
+class Action {
+public:
+  inline Action(){}
+  inline ~Action() {}
+
+  template<typename T>
+  T getData(const uint8_t *payload, const char *key){
+    if (payload == nullptr) {
+      return false;
+    }
+
+    StaticJsonDocument<64> filter;
+    DynamicJsonDocument json(1024);
+    filter["data"][key] = true;
+    DeserializationError error = deserializeJson(json, payload, DeserializationOption::Filter(filter));
+    
+    // Test if parsing succeeds.
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      return false;
+    }
+
+    // json value to type from T
+    JsonObject obj = json.as<JsonObject>();
+    return obj["data"][key].as<T>();
+  }
+
+  template<typename T>
+  T getCommand(const uint8_t *payload, const char *key){
+    if (payload == nullptr) {
+      return false;
+    }
+
+    StaticJsonDocument<64> filter;
+    DynamicJsonDocument json(1024);
+    // filter for two fields EX: commands/light or commands/water-pump
+    filter["commands"][key] = true;
+    DeserializationError error = deserializeJson(json, payload, DeserializationOption::Filter(filter));
+    
+    // Test if parsing succeeds.
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.f_str());
+      return false;
+    }
+
+    // json value to type from T
+    JsonObject obj = json.as<JsonObject>();
+    return obj["commands"][key].as<T>();
+  }
+};
+
+class More4iot : public DataObjectImpl, public Action
+{
+public:
+  More4iot(){};
+  ~More4iot(){};
+
+  virtual bool connect(){};
+  virtual inline void disconnect(){};
+  virtual inline bool connected(){};
+  virtual bool send(){};
+  virtual bool receive(){};
+  virtual void loop(){};
+};
+
+class More4iotMqtt : public More4iot
+{
+private:
+  PubSubClient mqttClient;
+  String topicPublish = "input";
+  // String topicSubscribe;
+  String user;
+  String pass;
+  IPAddress ip;
+  int port;
+
+public:
+  inline More4iotMqtt(Client &client, IPAddress &ip, int port = 1883, String user = "more4iot", String pass = "1234")
+      : mqttClient(client), ip(ip), port(port), user(user), pass(pass) {}
+  inline ~More4iotMqtt() {}
+  bool connect() override;
+  inline void disconnect() override;
+  inline bool connected() override;
+  bool send() override;
+  // bool receive() override;
+  void loop() override;
+};
+
+class More4iotHttp : public More4iot
+{
+private:
+  HttpClient httpClient;
+  const char *host;
+  int port;
+  String route = "/inputCommunicator";
+  String contentType = "application/json; charset=utf-8";
+
+public:
+  inline More4iotHttp(Client &client,
+                      const char *host, int port = 80)
+      : httpClient(client, host, port), host(host), port(port) {}
+  inline ~More4iotHttp() {}
+
+  bool connect() override;
+  inline void disconnect() override;
+  bool connected() override;
+  bool send() override;
+  // bool receive(){};
+  void loop() override{};
+};
+
+class More4iotCoap : public More4iot
+{
+private:
+  Coap coap;
+  // endpoint for more4iot input communicator
+  String endpointInput = "input"; //url
+  // more4iot connection
+  IPAddress ip;
+  int port;
+
+public:
+  inline More4iotCoap(UDP& udp, IPAddress& ip, int port = 5683)
+      : coap(udp), ip(ip), port(port) {}
+  inline ~More4iotCoap() {}
+
+  bool connect() override;
+  // inline void disconnect() override {return;}
+  // inline bool connected() override  {return true;}
+  bool send() override;
+  void response(CoapCallback c);
+  void server(CoapCallback c, String url);
+  void sendResponse(IPAddress ip, int port, uint16_t messageid, const char *payload);
+  void loop() override;
+};
+
+#endif

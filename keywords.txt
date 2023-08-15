@@ -1,0 +1,25 @@
+#######################################
+# Syntax Coloring Map For MORE4IoT
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+MORE4IoT	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+connect         KEYWORD2
+connected 	    KEYWORD2
+disconnect      KEYWORD2
+send            KEYWORD2
+loop	          KEYWORD2
+newDataObject   KEYWORD2
+addField        KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
